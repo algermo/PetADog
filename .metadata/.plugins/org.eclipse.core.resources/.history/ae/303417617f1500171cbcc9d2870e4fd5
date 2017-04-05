@@ -1,0 +1,58 @@
+import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
+
+public class GameLogic {
+	
+	private int shown = 4;
+	private int moles = 16;
+	
+	private ArrayList<Thread> threads = new ArrayList<Thread>();
+	
+	public GameLogic() {
+		
+		Semaphore sem = new Semaphore(shown);
+		for(int i = 0; i < moles; i++) {
+			
+			Thread m = new Thread(new MoleThread(sem));
+			threads.add(m);
+			m.start();
+			
+		}
+		
+		for(Thread t: threads) {
+			
+			try {
+				if(t.isAlive()) {
+					t.join();
+				}
+			} catch (Exception e) {
+				
+			}
+		}
+	}
+	
+	
+}
+
+
+class MoleThread implements Runnable {
+	
+	Semaphore sem;
+	
+	public MoleThread (Semaphore s) {
+		sem = s;
+	}
+	
+	public void run() {
+		
+	}
+	
+}
+
+class PlayerThread implements Runnable {
+	
+	public void run() {
+		
+	}
+	
+}

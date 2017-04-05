@@ -1,0 +1,290 @@
+/*****************************************************************
+Pet A Dog
+
+@author Molly Alger
+ *****************************************************************/
+
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
+import java.util.concurrent.Semaphore;
+import javax.swing.*;
+
+public class PetADog extends JPanel {
+
+	private static final long serialVersionUID = 1L;
+	private JLabel scoreLabel;
+	private JLabel tryLabel;
+	private int buttonSize;
+	private int size;
+	private int shown;
+	private ArrayList<Thread> threads = new ArrayList<Thread>();
+	private JPanel center;
+	private int score;
+	private ImageIcon piper;
+	private int gameOver;
+	private int tries;
+
+	public PetADog() {
+
+		// show options for player configuration
+		optionPanes();
+
+		// determine how large to make buttons
+		buttonSizer();
+
+		// set the dog image for the buttons
+		piper = new ImageIcon("C:/Users/Molly/Downloads/piper.jpg");
+		Image newimg = piper.getImage().getScaledInstance
+				(buttonSize, buttonSize,  java.awt.Image.SCALE_SMOOTH ) ;  
+		piper = new ImageIcon(newimg);
+
+		// create thread for GUI
+		Thread gui = new Thread(new GUIThread());
+		gui.start();
+
+		// wait for GUI to finish creating
+		try {
+			gui.join();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// create a semaphore with limit = the max dogs shown
+		Semaphore sem = new Semaphore(shown);
+
+		// create a semaphore for checking for game over 
+		Semaphore done = new Semaphore(1);
+
+		// ArrayList for random numbers
+		ArrayList<Integer> nums = new ArrayList<Integer>();
+
+		// create board made of buttons
+		JButton[] board;
+		board = new JButton[size*size];
+
+		// create threads for each dog
+		for(int i = 0; i < size*size; i++) {
+
+			Thread m = new Thread(new DogThread(sem, done, i, board[i]));
+			threads.add(m);
+			nums.add(i);
+
+		}
+
+		// shuffle the random number ArrayList
+		Collections.shuffle(nums);
+
+		// randomly start the threads
+		for(int i = 0; i < size*size; i++) {
+			threads.get(nums.get(i)).start();
+		}
+
+	}
+
+	// shows JOptionPanes for user input
+	private void optionPanes(){
+
+		// arrays of options
+		String[] d;
+		String[] sizes = 
+			{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+
+		try {
+
+			// get user input for board size
+			size = Integer.parseInt((String)
+					JOptionPane.showInputDialog
+					(null, "How large is the board? (N x N)", "Board Size", 
+							JOptionPane.PLAIN_MESSAGE, null, 
+							sizes, sizes[0]));
+
+		} catch (Exception e) {
+			// user selects CANCEL or X
+			System.exit(0);
+		}
+
+		gameOver = size*size;
+		d = new String[size*size];
+		for(int i = 0; i < size*size; i++) {
+			d[i] = "" + (i+1);
+		}
+		try {
+
+			// get user input for number of dogs shown
+			shown = Integer.parseInt((String)
+					JOptionPane.showInputDialog
+					(null, "Maximum number of dogs shown?", "Dogs", 
+							JOptionPane.PLAIN_MESSAGE, null, 
+							d, d[0]));
+
+		} catch (Exception e) {
+			// user selects CANCEL or X
+			System.exit(0);
+		}
+
+	}
+
+	private void buttonSizer() {
+		buttonSize = 0;
+
+		switch (size) {
+		case 1: case 2: case 3: case 4:
+			buttonSize = 125;
+			break;
+		case 5: case 6: case 7: case 8:
+			buttonSize = 100;
+			break;
+		case 9: case 10:
+			buttonSize = 85;
+			break;
+		}
+	}
+
+	class GUIThread implements Runnable {
+
+		public void run() {
+
+			// create a grid layout for the board
+			center = new JPanel();
+			center.setLayout(new GridLayout(size, size, 10, 10));
+
+			// create panels for the GUI
+			JPanel j = new JPanel();
+			j.setLayout(new BorderLayout());
+			JPanel top = new JPanel();
+			JPanel bottom = new JPanel();
+
+			// create score label
+			score = 0;
+			scoreLabel = new JLabel("Score: " + Integer.toString(score));
+			bottom.add(scoreLabel);
+
+			// create buffer between labels
+			JLabel buffLabel = new JLabel("        ");
+			bottom.add(buffLabel);
+
+			// create try label
+			tries = 0;
+			tryLabel = new JLabel("Swings: " + Integer.toString(tries));
+			bottom.add(tryLabel);
+
+			JLabel title = new JLabel("Pet A Dog!");
+			top.add(title);
+
+			// put panels in correct places
+			add(j);
+			j.add(top, BorderLayout.NORTH);
+			j.add(center, BorderLayout.CENTER);
+			j.add(bottom, BorderLayout.SOUTH);
+		}
+
+	}
+
+	class DogThread implements Runnable {
+
+		Semaphore sem, done;
+		int threadNum;
+		JButton button;
+		int up = 0;
+
+		public DogThread (Semaphore s, Semaphore s1, int name, JButton b) {
+			sem = s;
+			done = s1;
+			threadNum = name;
+
+			// set button for each dog
+			button = b;
+			button = new JButton("");
+			button.setBackground(Color.white);
+			button.setPreferredSize(new Dimension (buttonSize, buttonSize));
+			button.setEnabled(true);
+			center.add(button);
+			ButtonListener listen = new ButtonListener();
+			button.addActionListener(listen);
+		}
+
+		public void run() {
+
+			while(up < 4) {
+				try {
+	
+					// get the semaphore
+					sem.acquire();
+	
+					// set self to showing
+					button.setIcon(piper);
+					button.setName("show");
+	
+					// sleep a random amount of time
+					Random rand = new Random();
+					int time = rand.nextInt(3000);
+					Thread.sleep(time);
+	
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+	
+				// set self to not showing
+				button.setIcon(null);
+				button.setName("not");
+	
+				// give up the semaphore
+				sem.release();
+				up++;
+			}
+			try {
+				// get the semaphore
+				done.acquire();
+
+				// update game status
+				gameOver--;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			// give up the semaphore
+			done.release();
+
+			// alert the player if the game has ended
+			if(gameOver <= 0) {
+				JOptionPane.showMessageDialog(null,"Game Over! \n" +
+						"All the dogs went to sleep. \n" +
+						"Your score: " + score);
+				System.exit(0);
+			}
+			
+		}
+
+	}
+	
+	private class ButtonListener implements ActionListener {
+
+		public void actionPerformed(ActionEvent e) {
+
+			tries++;
+
+			Object source = e.getSource();
+
+			if(((Component)source).getName() == "show") {
+				// increment score if the dog was showing
+				score++;
+			}
+
+			// update score and try label
+			scoreLabel.setText("Score: " + Integer.toString(score));
+			tryLabel.setText("Swings: " + Integer.toString(tries));
+
+		}
+	}
+
+}
+

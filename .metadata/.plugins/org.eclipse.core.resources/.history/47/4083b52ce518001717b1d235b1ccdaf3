@@ -1,0 +1,22 @@
+/*****************************************************************
+
+
+@author Molly Alger
+
+*****************************************************************/
+
+import javax.swing.JFrame;
+
+public class Game {
+
+	public static void main (String[] args)
+	{	
+		JFrame frame = new JFrame ("Whack a Mole!");
+		frame.setDefaultCloseOperation (JFrame.EXIT_ON_CLOSE);
+		PetADog game = new PetADog();
+		frame.getContentPane().add(game);
+		frame.setExtendedState(JFrame.MAXIMIZED_BOTH); 
+		frame.setVisible(true);
+	}
+	
+}

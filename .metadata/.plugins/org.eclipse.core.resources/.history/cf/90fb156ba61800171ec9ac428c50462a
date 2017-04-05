@@ -1,0 +1,78 @@
+import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
+
+import javax.swing.JFrame;
+
+public class GameLogic {
+	
+	private int shown;
+	private int size;
+	
+	private ArrayList<Thread> threads = new ArrayList<Thread>();
+	
+	public GameLogic() {
+		
+		Semaphore sem = new Semaphore(shown);
+		
+		for(int i = 0; i < size; i++) {
+			
+			System.out.println("Creating thread " + i);
+			Thread m = new Thread(new MoleThread(sem, i));
+			threads.add(m);
+			m.start();
+			
+		}
+		
+		for(Thread t: threads) {
+			
+			try {
+				if(t.isAlive()) {
+					t.join();
+				}
+			} catch (Exception e) {
+				
+			}
+		}
+	}
+	
+	public void setSize(int boardSize) {
+		size = boardSize;
+	}
+	
+	public void setMoles(int m) {
+		shown = m;
+	}
+	
+	public static void main (String[] args)
+	{	
+		GameLogic g = new GameLogic();
+	}
+	
+}
+
+
+class MoleThread implements Runnable {
+	
+	Semaphore sem;
+	boolean showing;
+	int threadNum;
+	
+	public MoleThread (Semaphore s, int name) {
+		sem = s;
+		threadNum = name;
+	}
+	
+	public void run() {
+		try {
+			sem.acquire();
+			System.out.println("Showing thread " + threadNum);
+			showing = true;
+			Thread.sleep(2000);
+		} catch (Exception e) {
+			
+		}
+		
+		sem.release();
+	}
+	
+}
